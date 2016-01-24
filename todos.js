@@ -28,7 +28,8 @@ if(Meteor.isClient){
   Template.todos.helpers({
     'todo': function(){
       var currentList = this._id;
-      return Todos.find({ listId: currentList }, {sort: {createdAt: -1}});
+      var currentUser = Meteor.userId();
+      return Todos.find({ createdBy: currenUser, listId: currentList }, {sort: {createdAt: -1}});
     }
   });
 
@@ -37,11 +38,13 @@ if(Meteor.isClient){
       event.preventDefault();
       var todoName = $('[name="todoName"]').val();
       var currentList = this._id;
+      var currentUser = Meteor.userId();
       Todos.insert({
         name: todoName,
         completed: false,
         createdAt: new Date(),
-        listId: currentList
+        listId: currentList,
+        createdBy: currentUser
       });
       $('[name="todoName"]').val('');
     }
@@ -102,8 +105,10 @@ if(Meteor.isClient){
     'submit form': function(event){
       event.preventDefault();
       var listName = $('[name=listName]').val();
+      var currentUser = Meteor.userId();
       Lists.insert({
-        name: listName
+        name: listName,
+        createdBy: currentUser
       }, function(error, results){
         Router.go('listPage', { _id: results });
       });
@@ -113,7 +118,8 @@ if(Meteor.isClient){
 
   Template.lists.helpers({
     'list': function(){
-      return Lists.find({}, {sort: {name: 1}});
+      var currentUser = Meteor.userId();
+      return Lists.find({ createdBy: currentUser }, {sort: {name: 1}});
     }
   });
 
@@ -125,8 +131,13 @@ if(Meteor.isClient){
       Accounts.createUser({
         email: email,
         password: password
+      }, function(error){
+        if(error) {
+          console.log(error.reason);
+        } else {
+          Router.go('home');
+        }
       });
-      Router.go('home');
     }
   });
 
@@ -135,7 +146,13 @@ if(Meteor.isClient){
       event.preventDefault();
       var email = $('[name=email]').val();
       var password = $('[name=password]').val();
-      Meteor.loginWithPassword(email, password);
+      Meteor.loginWithPassword(email, password, function(error){
+        if(error){
+          console.log(error.reason);
+        } else {
+          Router.go('home');
+        }
+      });
     }
   })
 
