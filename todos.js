@@ -11,7 +11,8 @@ Router.route('/', {
 });
 
 Router.configure({
-  layoutTemplate: 'main'
+  layoutTemplate: 'main',
+  loadingTemplate: 'loading'
 });
 
 Router.route('/list/:_id', {
@@ -29,32 +30,40 @@ Router.route('/list/:_id', {
     } else {
       this.render('login');
     }
+  },
+  waitOn: function(){
+    var currentList = this.params._id
+    return Meteor.subscribe('todos', currentList);
   }
 });
 
 if(Meteor.isClient){
   $.validator.setDefaults({
     rules: {
-        email: {
-            required: true,
-            email: true
-        },
-        password: {
-            required: true,
-            minlength: 6
-        }
+      email: {
+        required: true,
+        email: true
+      },
+      password: {
+        required: true,
+        minlength: 6
+      }
     },
     messages: {
-        email: {
-            required: "You must enter an email address.",
-            email: "You've entered an invalid email address."
-        },
-        password: {
-            required: "You must enter a password.",
-            minlength: "Your password must be at least {0} characters."
-        }
+      email: {
+        required: "You must enter an email address.",
+        email: "You've entered an invalid email address."
+      },
+      password: {
+        required: "You must enter a password.",
+        minlength: "Your password must be at least {0} characters."
+      }
     }
-});
+  });
+
+  Template.lists.onCreated(function(){
+    this.subscribe('lists');
+  });
 
   Template.login.onCreated(function(){
     console.log("The 'login' template was just created.");
@@ -250,5 +259,13 @@ if(Meteor.isClient){
 
 if(Meteor.isServer){
   // Server code goes here
+  Meteor.publish('lists', function(currentList){
+    var currentUser = this.userId;
+    return Lists.find({ createdBy: currentUser, listId: currentList });
+  });
 
+  Meteor.publish('todos', function(){
+    var currentUser = this.userId;
+    return Todos.find({ createdBy: currentUser })
+  });
 }
