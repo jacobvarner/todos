@@ -137,16 +137,6 @@ if(Meteor.isClient){
     'submit form': function(event){
       event.preventDefault();
       var todoName = $('[name="todoName"]').val();
-      var currentList = this._id;
-      var currentUser = Meteor.userId();
-      Todos.insert({
-        name: todoName,
-        completed: false,
-        createdAt: new Date(),
-        listId: currentList,
-        createdBy: currentUser
-      });
-      $('[name="todoName"]').val('');
     }
   });
 
@@ -205,14 +195,7 @@ if(Meteor.isClient){
     'submit form': function(event){
       event.preventDefault();
       var listName = $('[name=listName]').val();
-      var currentUser = Meteor.userId();
-      Lists.insert({
-        name: listName,
-        createdBy: currentUser
-      }, function(error, results){
-        Router.go('listPage', { _id: results });
-      });
-      $('[name=listName]').val('');
+      Meteor.call('createNewList', listName);
     }
   });
 
@@ -267,5 +250,19 @@ if(Meteor.isServer){
   Meteor.publish('todos', function(){
     var currentUser = this.userId;
     return Todos.find({ createdBy: currentUser })
+  });
+
+  Meteor.methods({
+    'createNewList': function(listName) {
+      var currentUser = Meteor.userId();
+      var data = {
+        name: listName,
+        createdBy: currentUser
+      }
+      if(!currentUser){
+        throw new Meteor.Error("not-logged-in", "You're not logged-in.");
+      }
+      Lists.insert(data);
+    }
   });
 }
